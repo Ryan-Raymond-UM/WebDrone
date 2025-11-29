@@ -1,0 +1,23 @@
+from websockets.asyncio.client import connect
+import aiortc
+import asyncio
+import json
+
+
+async def main():
+    async with connect('ws://localhost:8765/drone') as websocket:
+        print('Drone Ready')
+        peer_connection = aiortc.RTCPeerConnection()
+        data_channel = peer_connection.createDataChannel('data')
+        params = json.loads(await websocket.recv())
+        offer = aiortc.RTCSessionDescription(sdp=params['sdp'], type=params['type'])
+        await peer_connection.setRemoteDescription(offer)
+        answer = await peer_connection.createAnswer()
+        await peer_connection.setLocalDescription(answer)
+        params = {'type': answer.type, 'sdp': answer.sdp}
+        await websocket.send(json.dumps(params))
+        
+        
+        await asyncio.Future()
+
+asyncio.run(main())
